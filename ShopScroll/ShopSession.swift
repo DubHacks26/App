@@ -199,6 +199,34 @@ final class ShopSession: ObservableObject {
         return asins.compactMap { byID[$0] }
     }
 
+    func loadFriendData() async throws -> FriendData {
+        let data = try await request(path: "/user/friends")
+        return try JSONDecoder().decode(FriendData.self, from: data)
+    }
+
+    func searchFriendAccounts(_ query: String) async throws -> [FriendAccount] {
+        let data = try await request(path: "/user/friends/search", query: ["query": query])
+        struct Results: Decodable { let users: [FriendAccount] }
+        return try JSONDecoder().decode(Results.self, from: data).users
+    }
+
+    func sendFriendRequest(to friendID: String) async throws {
+        _ = try await request(path: "/user/friends/requests", method: "POST", json: ["friendId": friendID])
+    }
+
+    func respondToFriendRequest(from friendID: String, accept: Bool) async throws {
+        _ = try await request(path: "/user/friends/requests", method: "PATCH", json: ["friendId": friendID, "accept": accept])
+    }
+
+    func removeFriend(_ friendID: String) async throws {
+        let encodedID = friendID.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? friendID
+        _ = try await request(path: "/user/friends/\(encodedID)", method: "DELETE")
+    }
+
+    func shareProduct(_ productID: String, with friendID: String) async throws {
+        _ = try await request(path: "/user/friends/shares", method: "POST", json: ["friendId": friendID, "asin": productID])
+    }
+
     func submitSearch(_ query: String, into store: ShopStore) async {
         let clean = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return }

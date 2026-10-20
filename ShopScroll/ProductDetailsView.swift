@@ -4,6 +4,7 @@ struct ProductDetailsView: View {
     let product: Product
     @ObservedObject var store: ShopStore
     let onSave: () -> Void
+    let onShareWithFriend: () -> Void
     let onFeedback: (String) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -69,10 +70,17 @@ struct ProductDetailsView: View {
                         .disabled(store.isInCart(product.id))
                     }
 
-                    ShareLink(item: shareText) {
-                        Label("Share this find", systemImage: "square.and.arrow.up")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(ShopTheme.plum)
+                    HStack(spacing: 20) {
+                        ShareLink(item: shareText) {
+                            Label("Share this find", systemImage: "square.and.arrow.up")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(ShopTheme.plum)
+                        }
+                        Button(action: onShareWithFriend) {
+                            Label("Send to a friend", systemImage: "person.2")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(ShopTheme.plum)
+                        }
                     }
                     .padding(.top, 4)
 

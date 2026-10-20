@@ -2,6 +2,7 @@ import SwiftUI
 
 private enum ShopTab: String, CaseIterable, Identifiable {
     case discover = "Home"
+    case friends = "Friends"
     case scroll = "Scroll"
     case saved = "Saved"
     case cart = "Cart"
@@ -12,8 +13,9 @@ private enum ShopTab: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .discover: "safari"
-        case .scroll: "rectangle.stack"
         case .saved: "bookmark"
+        case .friends: "person.2"
+        case .scroll: "rectangle.stack"
         case .cart: "bag"
         case .budget: "wallet.pass"
         }
@@ -26,6 +28,7 @@ struct ContentView: View {
     @State private var tab: ShopTab = .scroll
     @State private var detailProduct: Product?
     @State private var saveProduct: Product?
+    @State private var shareProduct: Product?
     @State private var searchPresented = false
     @State private var preferencesPresented = false
     @State private var searchScrollQuery: String?
@@ -57,6 +60,8 @@ struct ContentView: View {
                     .id(searchScrollQuery ?? "main-feed")
                 case .saved:
                     SavedView(store: store, onDetails: { detailProduct = $0 })
+                case .friends:
+                    FriendsView(session: session, onDetails: { detailProduct = $0 })
                 case .cart:
                     CartView(store: store, onDetails: { detailProduct = $0 }, onScroll: { tab = .scroll })
                 case .budget:
@@ -85,11 +90,21 @@ struct ContentView: View {
             ProductDetailsView(product: product, store: store, onSave: {
                 detailProduct = nil
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { saveProduct = product }
+            }, onShareWithFriend: {
+                detailProduct = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { shareProduct = product }
             }, onFeedback: { message in showToast(message) })
                 .presentationDragIndicator(.visible)
         }
         .sheet(item: $saveProduct) { product in
             CollectionPickerView(product: product, store: store) { message in
+                showToast(message)
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $shareProduct) { product in
+            FriendShareView(product: product, session: session) { message in
                 showToast(message)
             }
             .presentationDetents([.medium, .large])
@@ -187,31 +202,36 @@ struct ContentView: View {
     private var tabBar: some View {
         HStack(spacing: 0) {
             ForEach(ShopTab.allCases) { item in
-                Button {
-                    tab = item
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: tab == item ? "\(item.symbol).fill" : item.symbol)
-                            .font(.system(size: 20, weight: .regular))
-                            .frame(height: 24)
-                        Text(item.rawValue)
-                            .font(.system(size: 10, weight: tab == item ? .bold : .medium))
-                    }
-                    .foregroundStyle(tab == item ? ShopTheme.plum : ShopTheme.muted)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 64)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(tab == item ? .isSelected : [])
+                tabButton(item)
             }
         }
+        .frame(height: 64)
         .padding(.horizontal, 7)
         .background {
             ShopTheme.paper
                 .ignoresSafeArea(edges: .bottom)
                 .overlay(alignment: .top) { ShopTheme.line.frame(height: 1) }
         }
+    }
+
+    private func tabButton(_ item: ShopTab) -> some View {
+        Button {
+            tab = item
+        } label: {
+            VStack(spacing: 4) {
+                Image(systemName: tab == item ? "\(item.symbol).fill" : item.symbol)
+                    .font(.system(size: 20, weight: .regular))
+                    .frame(height: 24)
+                Text(item.rawValue)
+                    .font(.system(size: 10, weight: tab == item ? .bold : .medium))
+            }
+            .foregroundStyle(tab == item ? ShopTheme.plum : ShopTheme.muted)
+            .frame(maxWidth: .infinity)
+            .frame(height: 64)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(tab == item ? .isSelected : [])
     }
 
     private func showToast(_ message: String) {

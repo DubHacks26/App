@@ -198,6 +198,32 @@ struct Product: Identifiable, Codable, Hashable {
     ]
 }
 
+struct FriendAccount: Codable, Identifiable, Hashable {
+    let userId: String
+    let username: String
+    let relationship: String?
+
+    var id: String { userId }
+}
+
+struct FriendShare: Codable, Identifiable, Hashable {
+    let id: String
+    let asin: String?
+    let senderUsername: String
+    let title: String
+    let brand: String?
+    let priceCents: Int?
+    let imageUrl: String?
+    let productUrl: String?
+}
+
+struct FriendData: Codable {
+    var friends: [FriendAccount] = []
+    var incomingRequests: [FriendAccount] = []
+    var outgoingRequests: [FriendAccount] = []
+    var shares: [FriendShare] = []
+}
+
 private struct CatalogEnvelope: Decodable {
     let products: [Product]
 }
